@@ -1,0 +1,19 @@
+#authorize {
+  display: none;
+}
+
+#app {
+  display: none;
+}
+
+#playlists {
+  display: block;
+}
+
+select {
+  width: 300px;
+}
+
+#playlistName {
+  display: block;
+}
