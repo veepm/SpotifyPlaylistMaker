@@ -1,5 +1,5 @@
 const clientId = "b102db7d41cf4fd884df1f90cd2a597a";
-const redirectUri = "http://127.0.0.1:5500/";
+const redirectUri = "http://127.0.0.1:5500/SpotifyPlaylistMaker/index.html";
 const authUrl = new URL("https://accounts.spotify.com/authorize");
 const scope = "playlist-read-private playlist-modify-public playlist-modify-private user-library-read";
 let codeVerifier = null;
@@ -107,61 +107,42 @@ const refreshAccessToken = async () => {
    localStorage.setItem("refresh_token", response.refresh_token);
  }
 
- // get users playlist
-const getPlaylists = async () => {
+const callApi = async (endpoint) => {
   const payload = {
     method: "GET",
     headers: {
       "Authorization" : `Bearer ${localStorage.getItem("access_token")}`
     },
   }
-  const body = await fetch("https://api.spotify.com/v1/me/playlists", payload);
+  const body = await fetch(endpoint, payload);
   const response = await body.json();
-
-  // if (body.status == 401){
-  //   refreshAccessToken();
-  //   await getPlaylists();
-  // }
-
-  playlists = response.items; 
- }
-
- // add playlists to html input
-const addPlaylists = () => {
-  playlists.forEach(playlist => {
-    document.getElementById("playlists").innerHTML += `<option>${playlist.name}</option>`;
-  });
-}
-
-// get users saved tracks
-const getSavedTracks = async (market, limit, offset) => {
-  const payload = {
-    method: "GET",
-    headers: {
-      "Authorization" : `Bearer ${localStorage.getItem("access_token")}`
-    },
-  }
-  const body = await fetch(`https://api.spotify.com/v1/me/tracks?market=${market}&limit=${limit}&offset=${offset}`, payload);
-  const response = await body.json();
-  
+  console.log(response);
   return response;
 }
 
-const getLikedSongs = async () => {
+
+// get array of liked songs
+const getLikedSongs = async (market) => {
   let likedSongs = [];
   let i = 0;
   while (true) {
-    let response = await getSavedTracks("IN", 50, i);
+    let response = await callApi(`https://api.spotify.com/v1/me/tracks?market=${market}&limit=50&offset=${i}`)
+    response.items.forEach(item => {
+      likedSongs.push(item.track);
+    });
+    i += 50;
     if (!response.next) {
       break;
     }
-    //likedSongs.push(response.items);
-    i += 50;
   }
-  console.log(likedSongs);
 }
 
-
+ // add playlists to html input
+ const addPlaylists = () => {
+  playlists.forEach(playlist => {
+    document.getElementById("playlists").innerHTML += `<option value="${playlist.name}">${playlist.name}</option>`;
+  });
+}
 
 // get auth code on redirect
 if (location.search.length > 0 ) {
@@ -180,7 +161,16 @@ else {
   }
   else {
     document.getElementById("app").style.display = "block";
-    await getPlaylists();
+    playlists = (await callApi("https://api.spotify.com/v1/me/playlists")).items;
     addPlaylists();
   }
 }
+
+document.getElementById("playlists").addEventListener("change", () => {
+  playlists.forEach(async playlist => {
+    if (playlist.name == document.getElementById("playlists").value) {
+      await callApi(playlist.tracks.href);
+      await getLikedSongs("IN");
+    }
+  });
+})
