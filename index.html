@@ -13,17 +13,14 @@
     <button id="btn">press</button>
   </div>
   <div id="app">
-    <select name="playlists" id="playlists">
-      <option>Liked Songs</option>
-    </select>
-    <select name="genre" id="genre">
+    <input id="playlist" type="text" list="playlists" placeholder="Playlist">
+    <datalist name="playlists" id="playlists"></datalist>
+    <!-- <select name="genre" id="genre">
       <option value="">Any</option>
-    </select>
-    <select name="artist" id="artist">
-      <option value="">Any</option>
-    </select>
+    </select> -->
+    <input id="artist" type="text" list="artists" placeholder="Artist">
+    <datalist name="artists" id="artists"></datalist>
     <input type="text" id="playlistName" placeholder="Playlist Name">
-    <!-- <button id="test"></button> -->
   </div>
 </body>
 </html>

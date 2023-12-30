@@ -2,11 +2,7 @@ const clientId = "b102db7d41cf4fd884df1f90cd2a597a";
 const redirectUri = "http://127.0.0.1:5500/SpotifyPlaylistMaker/index.html";
 const authUrl = new URL("https://accounts.spotify.com/authorize");
 const scope = "playlist-read-private playlist-modify-public playlist-modify-private user-library-read";
-let codeVerifier = null;
 let code = null;
-let accessToken = null; 
-let refreshToken = null;
-let playlists = null;
 
 //localStorage.removeItem("access_token");
 
@@ -31,7 +27,7 @@ const base64encode = (input) => {
 
 const requestAuthorization = async () => {
 
-  codeVerifier  = generateRandomString(64);
+  const codeVerifier  = generateRandomString(64);
   localStorage.setItem("code_verifier", codeVerifier);
   const hashed = await sha256(codeVerifier);
   const codeChallenge = base64encode(hashed);
@@ -58,7 +54,7 @@ const getCode = () => {
 // request access token from api
 const getAccessToken = async (code) => {
 
-  codeVerifier = localStorage.getItem("code_verifier");
+  const codeVerifier = localStorage.getItem("code_verifier");
 
   const payload = {
     method: "POST",
@@ -77,7 +73,8 @@ const getAccessToken = async (code) => {
   const body = await fetch("https://accounts.spotify.com/api/token", payload);
   const response = await body.json();
 
-  console.log(response);
+  console.log("Access");
+
   localStorage.setItem("access_token", response.access_token);
   localStorage.setItem("refresh_token", response.refresh_token);
 }
@@ -85,7 +82,7 @@ const getAccessToken = async (code) => {
 // request api for new access token using refresh token
 const refreshAccessToken = async () => {
 
-  refreshToken = localStorage.getItem("refresh_token");
+  const refreshToken = localStorage.getItem("refresh_token");
 
   const payload = {
      method: "POST",
@@ -107,19 +104,46 @@ const refreshAccessToken = async () => {
    localStorage.setItem("refresh_token", response.refresh_token);
  }
 
+//refreshAccessToken()
+
 const callApi = async (endpoint) => {
+  const accessToken = localStorage.getItem("access_token");
   const payload = {
     method: "GET",
     headers: {
-      "Authorization" : `Bearer ${localStorage.getItem("access_token")}`
+      "Authorization" : `Bearer ${accessToken}`
     },
   }
+
   const body = await fetch(endpoint, payload);
-  const response = await body.json();
+  let response = await body.json();
+
+  // token expired so get new one and recall api
+  if (body.status == 401){
+    await refreshAccessToken();
+    response = await callApi(endpoint);
+  }
+
   console.log(response);
   return response;
 }
 
+// get array of user playlists
+const getPlaylists = async () => {
+  let playlists = [];
+  let i = 0;
+  while (true) {
+    const response = await callApi(`https://api.spotify.com/v1/me/playlists?limit=50&offset=${i}`);
+    response.items.forEach(item => {
+      playlists.push(item);
+    })
+    i += 50;
+    if (!response.next) {
+      break;
+    }
+  }
+  return playlists;
+}
 
 // get array of liked songs
 const getLikedSongs = async (market) => {
@@ -128,20 +152,78 @@ const getLikedSongs = async (market) => {
   while (true) {
     let response = await callApi(`https://api.spotify.com/v1/me/tracks?market=${market}&limit=50&offset=${i}`)
     response.items.forEach(item => {
-      likedSongs.push(item.track);
+      likedSongs.push(item);
     });
     i += 50;
     if (!response.next) {
       break;
     }
   }
+  return likedSongs;
 }
 
- // add playlists to html input
- const addPlaylists = () => {
-  playlists.forEach(playlist => {
-    document.getElementById("playlists").innerHTML += `<option value="${playlist.name}">${playlist.name}</option>`;
+// get all unique genres in a list of songs
+const getGenres = (songs) => {
+  let genres = new Set();
+  songs.forEach(song => {
+    genres.add(song.tracks.artists.genres);
   });
+  console.log(genres);
+}
+
+// get all unique artist names from a list of songs
+const getArtists = (songs) => {
+  let artists = new Set();
+  songs.forEach(song => {
+    song.track.artists.forEach(artist => {
+      if (artist.name)
+      {
+        artists.add(artist.name);
+      }
+    })
+  });
+  artists = Array.from(artists).sort();
+  return artists;
+}
+
+// add playlists from list to html input
+const addPlaylistsOption = (playlists) => {
+  const playlistList = document.getElementById("playlists");
+  playlistList.innerHTML = `<option value="Liked Songs"></option>`;
+  playlists.forEach(playlist => {
+    playlistList.innerHTML += `<option value="${playlist.name}"></option>`;
+  });
+}
+
+// add artists from list to html input
+const addArtistsOption = (artists) => {
+  const artistList = document.getElementById("artists");
+  artistList.innerHTML = "";
+  artists.forEach(artist => {
+    artistList.innerHTML += `<option value="${artist}">${artist}</option>`;
+  });
+}
+
+const setAppPage = async () => {
+  document.getElementById("app").style.display = "block";
+  let playlists = await getPlaylists();
+  addPlaylistsOption(playlists);
+  document.getElementById("playlist").addEventListener("change", async () => {
+    // if input is liked songs get artists
+    if (document.getElementById("playlist").value == "Liked Songs") {
+      let likedSongs = await getLikedSongs("IN");
+      let artists = getArtists(likedSongs);
+      addArtistsOption(artists);
+    }
+    // else find which playlist is input and get artists
+    playlists.forEach(async playlist => {
+      if (playlist.name == document.getElementById("playlist").value) {
+        let songs = await callApi(playlist.tracks.href);
+        let artists = getArtists(songs.items);
+        addArtistsOption(artists);
+      }
+    });
+  })
 }
 
 // get auth code on redirect
@@ -151,26 +233,17 @@ if (location.search.length > 0 ) {
     //document.getElementById("app").style.display = "block";
     await getAccessToken(code);
   }
+  // reload after redirected
   location.href = redirectUri;
 }
 else {
-  accessToken = localStorage.getItem("access_token");
+  const accessToken = localStorage.getItem("access_token");
+  // if no accessToken then first visit and auth is required
   if (!accessToken) {
     document.getElementById("authorize").style.display = "block";
     document.getElementById("btn").addEventListener("click", requestAuthorization);
   }
   else {
-    document.getElementById("app").style.display = "block";
-    playlists = (await callApi("https://api.spotify.com/v1/me/playlists")).items;
-    addPlaylists();
+    setAppPage();
   }
 }
-
-document.getElementById("playlists").addEventListener("change", () => {
-  playlists.forEach(async playlist => {
-    if (playlist.name == document.getElementById("playlists").value) {
-      await callApi(playlist.tracks.href);
-      await getLikedSongs("IN");
-    }
-  });
-})

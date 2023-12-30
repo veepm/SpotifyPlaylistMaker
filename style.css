@@ -6,14 +6,10 @@
   display: none;
 }
 
-#playlists {
+#playlistName {
   display: block;
 }
 
-select {
-  width: 300px;
-}
-
-#playlistName {
+#playlist {
   display: block;
 }
