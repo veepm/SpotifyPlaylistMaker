@@ -337,7 +337,7 @@ else {
     // create playlist on button click
     document.getElementById("addBtn").addEventListener("click", async () => {
       let playlist = null;
-      if (playlistNameElem.value) {
+      if (playlistNameElem.value && selectedArtists.length > 0) {
         if (playlistNames.indexOf(playlistNameElem.value) == -1) {
           playlist = await createPlaylist(playlistNameElem.value, userProfile.id);
         }
