@@ -1,7 +1,8 @@
+// global variables for api call
 const clientId = "b102db7d41cf4fd884df1f90cd2a597a";
 const redirectUri = "http://127.0.0.1:5500/SpotifyPlaylistMaker/index.html";
 const authUrl = new URL("https://accounts.spotify.com/authorize");
-const scope = "playlist-read-private playlist-modify-public playlist-modify-private user-library-read";
+const scope = "playlist-read-private playlist-modify-public playlist-modify-private user-library-read user-library-modify";
 let code = null;
 
 //localStorage.removeItem("access_token")
@@ -144,32 +145,16 @@ const getPlaylists = async () => {
   }
 }
 
-// get array of item of liked songs
-const getLikedSongs = async () => {
-  let likedSongs = [];
-  let i = 0;
-  while (true) {
-    let response = await callApi(`https://api.spotify.com/v1/me/tracks?limit=50&offset=${i}`)
-    response.items.forEach(item => {
-      likedSongs.push(item);
-    });
-    i += 50;
-    if (!response.next) {
-      return likedSongs;
-    }
-  }
-}
-
 // get array of item of songs of a playlist from provided endpoint
 const getSongs = async (endpoint) => {
   let songs = [];
   let i = 0;
   while (true) {
-    let response = await callApi(`${endpoint}?offset=${i}`)
+    let response = await callApi(`${endpoint}?limit=50&offset=${i}`)
     response.items.forEach(item => {
       songs.push(item);
     });
-    i += 100;
+    i += 50;
     if (!response.next) {
       return songs;
     }
@@ -240,19 +225,45 @@ const createPlaylist = async (playlistName, userId) => {
 const addSongs = async (songs, playlist) => {
   const accessToken = localStorage.getItem("access_token");
   // need to call api multiple times since till all songs are added
-  for (let i=0; i < songs.length; i+=100) {
-    const uris = songs.filter((song, index) => index >= i && index < i+100).map(song => song.track.uri);
-    const payload = {
-      method: "POST",
-      headers: {
-        "Authorization" : `Bearer ${accessToken}`,
-        "Content-Type" : "application/json"
-      },
-      body : JSON.stringify({
-        uris
-      })
-    }                                                     
-    await fetch(`https://api.spotify.com/v1/playlists/${playlist.id}/tracks`, payload);
+  for (let i=0; i < songs.length; i+=50) {
+    if (playlist == "Liked Songs") {
+      const ids = songs.filter((song, index) => index >= i && index < i+50).map(song => song.track.id);
+      const payload = {
+        method: "PUT",
+        headers: {
+          "Authorization" : `Bearer ${accessToken}`,
+          "Content-Type" : "application/json"
+        },
+        body : JSON.stringify({
+          ids
+        })
+      }
+      await fetch(`https://api.spotify.com/v1/me/tracks`, payload);  
+    }
+    else {    
+      const uris = songs.filter((song, index) => index >= i && index < i+50).map(song => song.track.uri);
+      const payload = {
+        method: "POST",
+        headers: {
+          "Authorization" : `Bearer ${accessToken}`,
+          "Content-Type" : "application/json"
+        },
+        body : JSON.stringify({
+          uris
+        })
+      }                                                     
+      await fetch(`https://api.spotify.com/v1/playlists/${playlist.id}/tracks`, payload);
+    }
+  }
+}
+
+// adds to input list of artists selected by user and displays it too
+const getSelectedArtists = (selectedArtists) => {
+  // all artists input by user
+  if (artists && artists.indexOf(artistElem.value) != -1) {
+    selectedArtistsElem.innerHTML += `<div>${artistElem.value}</div>`;
+    selectedArtists.push(artistElem.value);
+    artistElem.value = "";
   }
 }
 
@@ -275,13 +286,15 @@ else {
   // else user has already authorized
   else {
     document.getElementById("app").style.display = "block";
-
-    const playlistElem = document.getElementById("playlist");
-    const artistElem = document.getElementById("artist");
-    const playlistNameElem = document.getElementById("playlistName");
   
     const userProfile = await callApi("https://api.spotify.com/v1/me");
     
+    const playlistElem = document.getElementById("playlist");
+    const artistElem = document.getElementById("artist");
+    const playlistNameElem = document.getElementById("playlistName");
+    const selectedArtistsElem = document.getElementById("selectedArtists");
+    
+    // stores artist name along with array of item of their songs
     let artistSongs = {};
 
     const playlists = await getPlaylists();
@@ -297,11 +310,12 @@ else {
     playlistElem.addEventListener("change", async () => {
       artistSongs = {};
       selectedArtists = [];
+      selectedArtistsElem.innerHTML = "";
       // check if input playlist is an option
       if (playlistNames.indexOf(playlistElem.value) != -1) {
         // get songs depending on the playlist input
         if (playlistElem.value == "Liked Songs") {
-          songs = await getLikedSongs();
+          songs = await getSongs("https://api.spotify.com/v1/me/tracks");
         }
         else {
           const playlist = playlists[playlistNames.indexOf(playlistElem.value)];
@@ -312,23 +326,32 @@ else {
       }
     })
 
-    // display selected artists
     artistElem.addEventListener("change", () => {
-      let selectedArtistsElem = document.getElementById("selectedArtists");
-      if (artists && artists.indexOf(artistElem.value) != -1) {
+      if (artists && artists.indexOf(artistElem.value) != -1 && selectedArtists.indexOf(artistElem.value) == -1) {
         selectedArtistsElem.innerHTML += `<div>${artistElem.value}</div>`;
         selectedArtists.push(artistElem.value);
         artistElem.value = "";
       }
-      })
+    })
 
     // create playlist on button click
     document.getElementById("addBtn").addEventListener("click", async () => {
+      let playlist = null;
       if (playlistNameElem.value) {
-        const playlist = await createPlaylist(playlistNameElem.value, userProfile.id);
-        selectedArtists.forEach(async (artist) => {
+        if (playlistNames.indexOf(playlistNameElem.value) == -1) {
+          playlist = await createPlaylist(playlistNameElem.value, userProfile.id);
+        }
+        else if (playlistNameElem.value != "Liked Songs") {
+          playlist = playlists[playlistNames.indexOf(playlistNameElem.value)];
+        }
+        else {
+          playlist = "Liked Songs";
+        }
+        for (const artist of selectedArtists) {
           await addSongs(artistSongs[artist], playlist);
-        });
+        }
+        // refresh after songs are added
+        location.href = redirectUri;
       }
     })
   }
