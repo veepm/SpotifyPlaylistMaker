@@ -6,7 +6,7 @@ const authUrl = new URL("https://accounts.spotify.com/authorize");
 const scope = "playlist-read-private playlist-modify-public playlist-modify-private user-library-read user-library-modify";
 let code = null;
 
-//localStorage.removeItem("access_token")
+localStorage.removeItem("access_token")
 
 const generateRandomString = (length) => {
   const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
