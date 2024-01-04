@@ -274,6 +274,7 @@ if (location.search.length > 0 ) {
 }
 else {
   const accessToken = localStorage.getItem("access_token");
+  console.log(accessToken);
   // if no accessToken then user's first visit so auth is required
   if (!accessToken) {
     document.getElementById("authorize").style.display = "block";
