@@ -6,8 +6,6 @@ const authUrl = new URL("https://accounts.spotify.com/authorize");
 const scope = "playlist-read-private playlist-modify-public playlist-modify-private user-library-read user-library-modify";
 let code = null;
 
-localStorage.removeItem("access_token")
-
 const generateRandomString = (length) => {
   const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   const values = crypto.getRandomValues(new Uint8Array(length));
@@ -274,7 +272,6 @@ if (location.search.length > 0 ) {
 }
 else {
   const accessToken = localStorage.getItem("access_token");
-  console.log(accessToken);
   // if no accessToken then user's first visit so auth is required
   if (!accessToken) {
     document.getElementById("authorize").style.display = "block";
