@@ -45,8 +45,6 @@ const requestAuthorization = async () => {
   location.href = authUrl.toString();
 }
 
-localStorage.removeItem("access_token");
-
 // get auth code from return url
 const getCode = () => {
   const urlParams = new URLSearchParams(location.search);
@@ -276,7 +274,6 @@ else {
   const accessToken = localStorage.getItem("access_token");
   // if no accessToken then user's first visit so auth is required
   if (!accessToken) {
-    console.log("test");
     document.getElementById("authorize").style.display = "block";
     document.getElementById("btn").addEventListener("click", requestAuthorization);
   }
