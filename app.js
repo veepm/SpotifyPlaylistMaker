@@ -45,7 +45,7 @@ const requestAuthorization = async () => {
   location.href = authUrl.toString();
 }
 
-//localStorage.removeItem("access_token");
+localStorage.removeItem("access_token");
 
 // get auth code from return url
 const getCode = () => {
@@ -270,11 +270,10 @@ if (location.search.length > 0 ) {
     await getAccessToken(code);
   }
   // reload after redirected
-  //location.href = redirectUri;
+  location.href = redirectUri;
 }
 else {
   const accessToken = localStorage.getItem("access_token");
-  console.log(accessToken);
   // if no accessToken then user's first visit so auth is required
   if (!accessToken) {
     document.getElementById("authorize").style.display = "block";
