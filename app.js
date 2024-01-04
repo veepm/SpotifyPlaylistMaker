@@ -267,11 +267,10 @@ const addSongs = async (songs, playlist) => {
 if (location.search.length > 0 ) {
   getCode();
   if (code) {
-    console.log("test");
     await getAccessToken(code);
   }
   // reload after redirected
-  location.href = redirectUri;
+  //location.href = redirectUri;
 }
 else {
   const accessToken = localStorage.getItem("access_token");
