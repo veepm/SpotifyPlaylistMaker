@@ -45,7 +45,7 @@ const requestAuthorization = async () => {
   location.href = authUrl.toString();
 }
 
-localStorage.removeItem("access_token");
+//localStorage.removeItem("access_token");
 
 // get auth code from return url
 const getCode = () => {
@@ -267,6 +267,7 @@ const addSongs = async (songs, playlist) => {
 if (location.search.length > 0 ) {
   getCode();
   if (code) {
+    console.log("test");
     await getAccessToken(code);
   }
   // reload after redirected
