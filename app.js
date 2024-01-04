@@ -1,6 +1,7 @@
 // global variables for api call
 const clientId = "b102db7d41cf4fd884df1f90cd2a597a";
-const redirectUri = "http://127.0.0.1:5500/SpotifyPlaylistMaker/index.html";
+//const redirectUri = "http://127.0.0.1:5500/SpotifyPlaylistMaker/index.html";
+const redirectUri = "https://veepm.github.io/SpotifySubPlaylistMaker/";
 const authUrl = new URL("https://accounts.spotify.com/authorize");
 const scope = "playlist-read-private playlist-modify-public playlist-modify-private user-library-read user-library-modify";
 let code = null;
@@ -74,8 +75,6 @@ const getAccessToken = async (code) => {
   const body = await fetch("https://accounts.spotify.com/api/token", payload);
   const response = await body.json();
 
-  console.log("Access");
-
   localStorage.setItem("access_token", response.access_token);
   localStorage.setItem("refresh_token", response.refresh_token);
 }
@@ -99,13 +98,9 @@ const refreshAccessToken = async () => {
    const body = await fetch("https://accounts.spotify.com/api/token", payload);
    const response = await body.json();
 
-   console.log(response);
-
    localStorage.setItem("access_token", response.access_token);
    localStorage.setItem("refresh_token", response.refresh_token);
  }
-
-//refreshAccessToken()
 
 const callApi = async (endpoint) => {
   const accessToken = localStorage.getItem("access_token");
@@ -125,7 +120,6 @@ const callApi = async (endpoint) => {
     response = await callApi(endpoint);
   }
 
-  console.log(response);
   return response;
 }
 
@@ -179,7 +173,6 @@ const getUniqueArtists = (songs, artistSongs) => {
       }
     })
   });
-  console.log(artistSongs);
   artists = Array.from(artists).sort();
   return artists;
 }
@@ -218,12 +211,19 @@ const createPlaylist = async (playlistName, userId) => {
   }
   const body = await fetch(`https://api.spotify.com/v1/users/${userId}/playlists`, payload);
   const response = await body.json();
+
+  if (body.status == 401){
+    await refreshAccessToken();
+    response = await callApi(endpoint);
+  }
+
   return response;
 }
 
 // adds song from songs list into the given playlist
 const addSongs = async (songs, playlist) => {
   const accessToken = localStorage.getItem("access_token");
+  let body = null;
   // need to call api multiple times since till all songs are added
   for (let i=0; i < songs.length; i+=50) {
     if (playlist == "Liked Songs") {
@@ -238,7 +238,7 @@ const addSongs = async (songs, playlist) => {
           ids
         })
       }
-      await fetch(`https://api.spotify.com/v1/me/tracks`, payload);  
+      body = await fetch(`https://api.spotify.com/v1/me/tracks`, payload);  
     }
     else {    
       const uris = songs.filter((song, index) => index >= i && index < i+50).map(song => song.track.uri);
@@ -252,18 +252,14 @@ const addSongs = async (songs, playlist) => {
           uris
         })
       }                                                     
-      await fetch(`https://api.spotify.com/v1/playlists/${playlist.id}/tracks`, payload);
+      body = await fetch(`https://api.spotify.com/v1/playlists/${playlist.id}/tracks`, payload);
     }
-  }
-}
 
-// adds to input list of artists selected by user and displays it too
-const getSelectedArtists = (selectedArtists) => {
-  // all artists input by user
-  if (artists && artists.indexOf(artistElem.value) != -1) {
-    selectedArtistsElem.innerHTML += `<div>${artistElem.value}</div>`;
-    selectedArtists.push(artistElem.value);
-    artistElem.value = "";
+    if (body.status == 401){
+      await refreshAccessToken();
+      response = await callApi(endpoint);
+    }
+
   }
 }
 
@@ -310,6 +306,7 @@ else {
     playlistElem.addEventListener("change", async () => {
       artistSongs = {};
       selectedArtists = [];
+      document.getElementById("artists").innerHTML = "";
       selectedArtistsElem.innerHTML = "";
       // check if input playlist is an option
       if (playlistNames.indexOf(playlistElem.value) != -1) {
