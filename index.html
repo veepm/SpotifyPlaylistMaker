@@ -4,16 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
   <script type="module" src="app.js"></script>
   <title>Document</title>
 </head>
 <body>
+  <h1>Spotify Sub-Playlist Maker</h1>
   <div id="authorize">
-    <p>login for authorization</p>
+    <p>Login for authorization</p>
     <button id="btn">press</button>
   </div>
   <div id="app">
-    <div id="container">
+    <div id="inputContainer">
       <input id="playlist" type="text" list="playlists" placeholder="Playlist">
       <datalist name="playlists" id="playlists"></datalist>
       <input id="artist" type="text" list="artists" placeholder="Artist">
@@ -23,5 +27,6 @@
       <button id="addBtn">Add Songs</button>
     </div>
   </div>
+  <div id="load"></div>
 </body>
 </html>

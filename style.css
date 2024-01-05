@@ -1,31 +1,78 @@
 * {
   margin: 0;
   padding: 0;
+  font-family: Roboto;
 }
 
 body {
   min-height: 100vh;
+  background: #F2E8CF;
+}
+
+h1 {
+  text-align: center;
+  color: #6A994E;
 }
 
 #authorize {
   display: none;
+  text-align: center;
 }
 
 #app {
   display: none;
 }
 
-#container {
-  margin-top: 10vh;
-  min-width: 5px;
+#inputContainer {
+  height: 50vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  justify-content: space-evenly;
 }
 
 input {
   width: 20vw;
   height: 5vh;
+}
+
+button {
+  min-width: 8vw;
+  min-height: 3vh;
+  border-radius: 3vw;
+  border: none;
+  background-color: #BC4749;
+  color: #F2E8CF;
+}
+
+button:active {
+  background-color: #ae4143;
+}
+
+#load {
+  position: fixed;
+  background-color: rgba(0,0,0,0.6);
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+#load::before {
+  content: "";
+  width: 25vh;
+  height: 25vh;
+  border: 10px solid white;
+  border-radius: 25vh;
+  border-top-color: #6A994E;
+  animation: loading 0.75s ease infinite;
+}
+
+@keyframes loading {
+  from {transform: rotate(0turn);}
+  to {transform: rotate(1turn);}
 }
 

@@ -261,6 +261,17 @@ const addSongs = async (songs, playlist) => {
   }
 }
 
+// used to display loading during api call
+const load = (start) => {
+  const loadElem = document.getElementById("load");
+  if (start) {
+    loadElem.style.display = "flex";
+  }
+  else {
+    loadElem.style.display = "none";
+  }
+}
+
 // get auth code on redirect
 if (location.search.length > 0 ) {
   getCode();
@@ -291,7 +302,9 @@ else {
     // stores artist name along with array of item of their songs
     let artistSongs = {};
 
+    load(true);
     const playlists = await getPlaylists();
+    load(false);
     const playlistNames = playlists.map(playlist => playlist.name);
     playlistNames.push("Liked Songs");
     addPlaylistsOption(playlistNames);
@@ -309,6 +322,7 @@ else {
       // check if input playlist is an option
       if (playlistNames.indexOf(playlistElem.value) != -1) {
         // get songs depending on the playlist input
+        load(true);
         if (playlistElem.value == "Liked Songs") {
           songs = await getSongs("https://api.spotify.com/v1/me/tracks");
         }
@@ -316,6 +330,7 @@ else {
           const playlist = playlists[playlistNames.indexOf(playlistElem.value)];
           songs = await getSongs(playlist.tracks.href);
         }
+        load(false);
         artists = getUniqueArtists(songs, artistSongs);
         addArtistsOption(artists);
       }
@@ -342,9 +357,11 @@ else {
         else {
           playlist = "Liked Songs";
         }
+        load(true);
         for (const artist of selectedArtists) {
           await addSongs(artistSongs[artist], playlist);
         }
+        load(false);
         // refresh after songs are added
         location.href = redirectUri;
       }
