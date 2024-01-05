@@ -4,5 +4,4 @@ The user can choose the artists from the playlist that they want to filter by an
 If name is the same as an existing playlist then the songs are added to the existing playlist instead.
 Can be visited at: [https://veepm.github.io/SpotifySubPlaylistMaker/](https://veepm.github.io/SpotifySubPlaylistMaker/)
 
-https://github.com/veepm/SpotifySubPlaylistMaker/assets/110181543/2bb16a52-90e2-413a-a227-2dc804545d73
-
+https://github.com/veepm/SpotifySubPlaylistMaker/assets/110181543/816ee9a1-97ac-4815-a64c-0877084ca9c2
